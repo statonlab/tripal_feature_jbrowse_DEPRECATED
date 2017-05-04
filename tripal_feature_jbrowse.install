@@ -1,0 +1,21 @@
+<?php
+
+function tripal_feature_jbrowse_schema() {
+  $schema['tripal_feature_jbrowse'] = [
+    'description' => t('Stores JBrowse links for features based on their organism configuration.'),
+    'fields' => [
+      'id' => ['type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE],
+      'organism_id' => ['type' => 'int'],
+      'title' => ['type' => 'varchar', 'length' => '255'],
+      'link' => ['type' => 'varchar', 'length' => '255'],
+      'tracks' => ['type' => 'varchar', 'length' => '255'],
+      'description' => ['type' => 'text'],
+    ],
+    'unique keys' => [
+      'organism_id' => ['organism_id'],
+    ],
+    'primary key' => ['id'],
+  ];
+
+  return $schema;
+}

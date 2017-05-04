@@ -1,0 +1,9 @@
+#tripal_jbrowse_pane_container {
+    position: relative;
+}
+
+#tripal_jbrowse_pane_go_to_button {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+}

@@ -1,0 +1,231 @@
+<?php
+/**
+ * @file
+ * Provides a pane in the feature page that links features to JBrowse
+ * instances for other organisms.
+ */
+
+/**
+ * Implements hook_permission().
+ *
+ * Define access permissions.
+ */
+function tripal_feature_jbrowse_permission() {
+  $items = [
+    'administer feature jbrowse links' => [
+      'title' => t('Administer Feature URLs'),
+      'description' => t('Manage feature urls per organism.'),
+    ],
+  ];
+
+  return $items;
+}
+
+/**
+ * Implements hook_menu().
+ *
+ * Define menu urls and their callbacks.
+ *
+ * @return mixed
+ */
+function tripal_feature_jbrowse_menu() {
+  $items['admin/feature_jbrowse_link'] = [
+    'title' => t('Feature JBrowse Link'),
+    'description' => t('Manage feature JBrowse links'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => ['tripal_feature_jbrowse_form'],
+    'access arguments' => ['administer feature jbrowse links'],
+    'type' => MENU_NORMAL_ITEM,
+  ];
+
+  return $items;
+}
+
+/**
+ * Create the form.
+ *
+ * @return array
+ */
+function tripal_feature_jbrowse_form() {
+  // Get the list of organisms
+  $organisms = chado_query('select organism_id, common_name, genus, species from {organism}');
+
+  $organisms_list = ['' => '-- Choose Organism --'];
+
+  while ($organism = $organisms->fetchObject()) {
+    $organisms_list[$organism->organism_id] = t("{$organism->common_name} ({$organism->genus} {$organism->species})");
+  }
+
+  $form['organism'] = [
+    '#prefix' => '<p><b>Add a pane to the organism page that links to a JBrowse instance.</b></p>',
+    '#title' => t('Organism'),
+    '#type' => 'select',
+    '#description' => t('Organism to associate a JBrowse instance to its features.'),
+    '#options' => $organisms_list,
+    '#attributes' => ['class' => ['form-control']],
+    '#default_value' => current($organisms_list),
+    '#required' => TRUE,
+  ];
+
+  $form['title'] = [
+    '#type' => 'textfield',
+    '#title' => t('Pane Title'),
+    '#default_value' => t('JBrowse'),
+    '#description' => t('The pane\'s link title.'),
+    '#required' => TRUE,
+  ];
+
+  $form['link'] = [
+    '#type' => 'textfield',
+    '#title' => t('Feature JBrowse Link'),
+    '#description' => t('Link to the JBrowse instance. Example: /jbrowse/?data=organism or https://example.com/jbrowse?data=organism.'),
+    '#required' => TRUE,
+  ];
+
+  $form['tracks'] = [
+    '#type' => 'textfield',
+    '#title' => t('JBrowse Tracks'),
+    '#description' => t('Add a comma separated list of JBrowse tracks to display by default. Example: gene, MARKER1, Marker2.'),
+  ];
+
+  $form['description'] = [
+    '#type' => 'textarea',
+    '#title' => t('Pane Page Content'),
+    '#description' => t('Optional description for the pane. If left empty, clicking on the pane\'s link will redirect the user to JBrowse.'),
+  ];
+
+  $form['submit'] = [
+    '#type' => 'submit',
+    '#value' => 'Save',
+  ];
+
+  return $form;
+}
+
+/**
+ * Handle form submission and add record to the database.
+ *
+ * @param $form
+ * @param $form_sate
+ *
+ * @return void
+ */
+function tripal_feature_jbrowse_form_submit($form, &$form_sate) {
+  $values = $form_sate['values'];
+  $organism_id = $values['organism'];
+  $title = $values['title'];
+  $link = $values['link'];
+  $tracks = $values['tracks'] ? explode(',', $values['tracks']) : [];
+  $description = $values['description'];
+
+  // Insert records to the database
+  db_insert('tripal_feature_jbrowse')->fields([
+    'organism_id' => $organism_id,
+    'title' => $title,
+    'link' => $link,
+    'tracks' => json_encode($tracks),
+    'description' => $description,
+  ])->execute();
+
+  drupal_set_message('Record saved successfully');
+}
+
+/**
+ * Implements hook_node_view().
+ *
+ * @param $node
+ * @param $view_mode
+ * @param $langcode
+ *
+ * @return void
+ */
+function tripal_feature_jbrowse_node_view($node, $view_mode, $langcode) {
+  if ($node->type !== 'chado_feature' || $view_mode !== 'full') {
+    return;
+  }
+
+  $record = tripal_feature_jbrowse_get_jbrowse_record($node->feature->organism_id->organism_id);
+
+  if ($record) {
+    tripal_feature_jbrowse_parse_link($record);
+    $node->content['tripal_feature_jbrowse'] = tripal_feature_jbrowse_render_template($record);
+    drupal_add_css(drupal_get_path('module', 'tripal_feature_jbrowse') . '/theme/css/tripal_feature_jbrowse.css');
+  }
+}
+
+
+/**
+ * Render the pane content.
+ *
+ * @param $record
+ *
+ * @return array
+ */
+function tripal_feature_jbrowse_render_template($record) {
+
+  if (!empty($record->description)) {
+    return [
+      '#title' => $record->title,
+      '#tripal_toc_id' => 'tripal_feature_jbrowse',
+      '#tripal_toc_title' => $record->title,
+      '#markup' => theme('tripal_feature_jbrowse_pane', ['record' => $record]),
+      '#weight' => 15,
+    ];
+  }
+
+  return [
+    '#type' => 'link',
+    '#title' => "<a href='{$record->link}'>{$record->title}</a>",
+    '#href' => $record->link,
+    '#weight' => 15,
+  ];
+}
+
+function tripal_feature_jbrowse_get_jbrowse_record($organism_id) {
+  return db_query('SELECT * FROM {tripal_feature_jbrowse} WHERE organism_id=:id', [
+    ':id' => $organism_id,
+  ])->fetchObject();
+}
+
+/**
+ * Implements hook_theme().
+ *
+ * @param $existing
+ * @param $type
+ * @param $theme
+ * @param $path
+ */
+function tripal_feature_jbrowse_theme($existing, $type, $theme, $path) {
+  $items = [
+    'tripal_feature_jbrowse_pane' => [
+      'variables' => ['record' => ''],
+      'template' => 'tripal_feature_jbrowse_pane',
+      'path' => "{$path}/theme/templates",
+    ],
+  ];
+
+  return $items;
+}
+
+/**
+ * Parse jbrowse links to include tracks.
+ *
+ * @param object $record tripal_feature_jbrowse DB record
+ */
+function tripal_feature_jbrowse_parse_link(&$record) {
+  if (!empty($record->tracks)) {
+    $tracks = json_decode($record->tracks);
+    foreach ($tracks as $key => $track) {
+      $tracks[$key] = trim($track);
+    }
+
+    $tracks = implode(',', $tracks);
+
+    if (strpos($record->link, '?') !== FALSE) {
+      $record->link .= "&tracks={$tracks}";
+    }
+    else {
+      $record->link .= "?tracks={$tracks}";
+    }
+  }
+}

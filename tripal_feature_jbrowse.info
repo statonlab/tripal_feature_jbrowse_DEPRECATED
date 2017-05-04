@@ -1,0 +1,4 @@
+name = Tripal Feature Jbrowse
+description = Allow features to have jbrowse links.
+core = 7.x
+version = 7.x-0.x-dev
