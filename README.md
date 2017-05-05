@@ -5,12 +5,12 @@ This is a [Tripal](https://github.com/tripal/tripal) extension that provides a m
 Simply download or clone the modules into your `[Drupal installation path]/sites/all/modules/` and enable it using `drush` or the admin panel.
 
 ## Usage
-A link menu will appear in the admin page that links title Tripal Feature Jbrowse that links to `admin/tripal/extension/feature_jbrowse_link`. This will redirect the user to a list of existing links. 
-To add a new item, click on the "Add" link. Once the form is submitted, all features that belong to the chosen organism will have a new pane link that can be found on the left sidebar. The link will read the title entered in the form.
+A link menu will appear in the admin page titled *Tripal Feature Jbrowse* that links to `admin/tripal/extension/feature_jbrowse_link`. This will redirect the user to a list of existing links. 
+To add a new item, click on the "Add" link. Once the form is submitted, all features that belong to the chosen organism will have a new pane link that can be found on the left sidebar. The link will display the title entered in the form.
 To edit an item, visit the module's page `admin/tripal/extension/feature_jbrowse_link` and click the edit link for the item you'd like to edit. Deleting an item is also done in the same page.
 
 ## Issues & Contributions
-Please report any issues in the GitHub [issue tracker](https://github.com/statonlab/web-crawler/issues).
+Please report any issues in the GitHub [issue tracker](https://github.com/statonlab/tripal_feature_jbrowse/issues).
 
 Contributions are always welcome and appreciated!
 
