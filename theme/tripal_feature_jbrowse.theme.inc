@@ -17,7 +17,7 @@ function tripal_feature_jbrowse_preprocess(&$variables, $hook) {
 
   $variables['has_records'] = TRUE;
 
-  if (!$results) {
+  if ($results->rowCount() < 1) {
     $variables['has_records'] = FALSE;
     return;
   }
