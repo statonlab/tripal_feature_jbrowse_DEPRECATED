@@ -2,7 +2,7 @@
 /**
  * Create the form.
  *
- * @return array
+ * @return mixed
  */
 function tripal_feature_jbrowse_form($form, &$form_state, $id = NULL) {
 
@@ -18,6 +18,9 @@ function tripal_feature_jbrowse_form($form, &$form_state, $id = NULL) {
       $tracks = implode(',', json_decode($record->tracks));
       $description = $record->description;
       $show = $record->show_in_organism_page;
+    }
+    else {
+      return drupal_not_found();
     }
   }
 
@@ -134,7 +137,8 @@ function tripal_feature_jbrowse_delete($id) {
     ->execute();
   if ($delete) {
     drupal_set_message('Record deleted successfully.');
-  } else {
+  }
+  else {
     drupal_set_message('Could not delete the record. Please try again.', 'error');
   }
 
