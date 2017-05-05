@@ -1,4 +1,8 @@
 name = Tripal Feature Jbrowse
-description = Allow features to have jbrowse links.
+description = Allow feature and organism content types to have jbrowse links as TOC items.
 core = 7.x
 version = 7.x-0.x-dev
+dependencies[] = tripal_core
+
+stylesheets[all][] = theme/css/tripal_feature_jbrowse.css
+scripts[] = theme/js/tripal_feature_jbrowse.js

@@ -10,6 +10,7 @@ function tripal_feature_jbrowse_schema() {
       'link' => ['type' => 'varchar', 'length' => '255'],
       'tracks' => ['type' => 'varchar', 'length' => '255'],
       'description' => ['type' => 'text'],
+      'show_in_organism_page' => ['type', 'int', 'default' => 0],
     ],
     'unique keys' => [
       'organism_id' => ['organism_id'],

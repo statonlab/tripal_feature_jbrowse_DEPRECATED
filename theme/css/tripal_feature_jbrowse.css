@@ -1,9 +1,7 @@
-#tripal_jbrowse_pane_container {
-    position: relative;
+a.tripal-feature-jbrowse-delete {
+    color: #d9534f;
 }
 
-#tripal_jbrowse_pane_go_to_button {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
+a.tripal-feature-jbrowse-delete:hover {
+    color: #c21719;
 }

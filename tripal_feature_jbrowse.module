@@ -5,6 +5,10 @@
  * instances for other organisms.
  */
 
+include_once drupal_get_path('module', 'tripal_feature_jbrowse') . '/includes/tripal_feature_jbrowse.form.inc';
+include_once drupal_get_path('module', 'tripal_feature_jbrowse') . '/theme/tripal_feature_jbrowse.theme.inc';
+
+
 /**
  * Implements hook_permission().
  *
@@ -29,106 +33,54 @@ function tripal_feature_jbrowse_permission() {
  * @return mixed
  */
 function tripal_feature_jbrowse_menu() {
-  $items['admin/feature_jbrowse_link'] = [
+  $items['admin/tripal/extension/feature_jbrowse_link'] = [
     'title' => t('Feature JBrowse Link'),
     'description' => t('Manage feature JBrowse links'),
+    'page callback' => 'theme',
+    'page arguments' => ['tripal_feature_jbrowse_admin'],
+    'access arguments' => ['administer feature jbrowse links'],
+    'type' => MENU_NORMAL_ITEM,
+  ];
+
+  $items['admin/tripal/extension/feature_jbrowse_link/list'] = [
+    'title' => t('List'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => 1,
+  ];
+
+  $items['admin/tripal/extension/feature_jbrowse_link/add'] = [
+    'title' => t('Add'),
+    'description' => t('Add new feature JBrowse link'),
     'page callback' => 'drupal_get_form',
     'page arguments' => ['tripal_feature_jbrowse_form'],
     'access arguments' => ['administer feature jbrowse links'],
-    'type' => MENU_NORMAL_ITEM,
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 2,
+  ];
+
+  $items['admin/tripal/extension/feature_jbrowse_link/edit/%'] = [
+    'title' => t('Edit'),
+    'description' => t('Edit previous submission'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => ['tripal_feature_jbrowse_form', 5],
+    'access arguments' => ['administer feature jbrowse links'],
+    'type' => MENU_CALLBACK,
+    'weight' => 2,
+  ];
+
+  $items['admin/tripal/extension/feature_jbrowse_link/delete/%'] = [
+    'title' => t('Delete'),
+    'description' => t('Delete link'),
+    'page callback' => 'tripal_feature_jbrowse_delete',
+    'page arguments' => [5],
+    'access arguments' => ['administer feature jbrowse links'],
+    'type' => MENU_CALLBACK,
+    'weight' => 2,
   ];
 
   return $items;
 }
 
-/**
- * Create the form.
- *
- * @return array
- */
-function tripal_feature_jbrowse_form() {
-  // Get the list of organisms
-  $organisms = chado_query('select organism_id, common_name, genus, species from {organism}');
-
-  $organisms_list = ['' => '-- Choose Organism --'];
-
-  while ($organism = $organisms->fetchObject()) {
-    $organisms_list[$organism->organism_id] = t("{$organism->common_name} ({$organism->genus} {$organism->species})");
-  }
-
-  $form['organism'] = [
-    '#prefix' => '<p><b>Add a pane to the organism page that links to a JBrowse instance.</b></p>',
-    '#title' => t('Organism'),
-    '#type' => 'select',
-    '#description' => t('Organism to associate a JBrowse instance to its features.'),
-    '#options' => $organisms_list,
-    '#attributes' => ['class' => ['form-control']],
-    '#default_value' => current($organisms_list),
-    '#required' => TRUE,
-  ];
-
-  $form['title'] = [
-    '#type' => 'textfield',
-    '#title' => t('Pane Title'),
-    '#default_value' => t('JBrowse'),
-    '#description' => t('The pane\'s link title.'),
-    '#required' => TRUE,
-  ];
-
-  $form['link'] = [
-    '#type' => 'textfield',
-    '#title' => t('Feature JBrowse Link'),
-    '#description' => t('Link to the JBrowse instance. Example: /jbrowse/?data=organism or https://example.com/jbrowse?data=organism.'),
-    '#required' => TRUE,
-  ];
-
-  $form['tracks'] = [
-    '#type' => 'textfield',
-    '#title' => t('JBrowse Tracks'),
-    '#description' => t('Add a comma separated list of JBrowse tracks to display by default. Example: gene, MARKER1, Marker2.'),
-  ];
-
-  $form['description'] = [
-    '#type' => 'textarea',
-    '#title' => t('Pane Page Content'),
-    '#description' => t('Optional description for the pane. If left empty, clicking on the pane\'s link will redirect the user to JBrowse.'),
-  ];
-
-  $form['submit'] = [
-    '#type' => 'submit',
-    '#value' => 'Save',
-  ];
-
-  return $form;
-}
-
-/**
- * Handle form submission and add record to the database.
- *
- * @param $form
- * @param $form_sate
- *
- * @return void
- */
-function tripal_feature_jbrowse_form_submit($form, &$form_sate) {
-  $values = $form_sate['values'];
-  $organism_id = $values['organism'];
-  $title = $values['title'];
-  $link = $values['link'];
-  $tracks = $values['tracks'] ? explode(',', $values['tracks']) : [];
-  $description = $values['description'];
-
-  // Insert records to the database
-  db_insert('tripal_feature_jbrowse')->fields([
-    'organism_id' => $organism_id,
-    'title' => $title,
-    'link' => $link,
-    'tracks' => json_encode($tracks),
-    'description' => $description,
-  ])->execute();
-
-  drupal_set_message('Record saved successfully');
-}
 
 /**
  * Implements hook_node_view().
@@ -140,16 +92,22 @@ function tripal_feature_jbrowse_form_submit($form, &$form_sate) {
  * @return void
  */
 function tripal_feature_jbrowse_node_view($node, $view_mode, $langcode) {
-  if ($node->type !== 'chado_feature' || $view_mode !== 'full') {
+  $type = $node->type;
+  if ($view_mode !== 'full' || ($type !== 'chado_feature' && $type !== 'chado_organism')) {
     return;
   }
 
-  $record = tripal_feature_jbrowse_get_jbrowse_record($node->feature->organism_id->organism_id);
+  $organism_id = $type === 'chado_feature' ? $node->feature->organism_id->organism_id : $node->organism->organism_id;
+
+  $record = tripal_feature_jbrowse_get_jbrowse_record($organism_id);
+
+  if ($type === 'chado_organism' && !$record->show_in_organism_page) {
+    return;
+  }
 
   if ($record) {
     tripal_feature_jbrowse_parse_link($record);
     $node->content['tripal_feature_jbrowse'] = tripal_feature_jbrowse_render_template($record);
-    drupal_add_css(drupal_get_path('module', 'tripal_feature_jbrowse') . '/theme/css/tripal_feature_jbrowse.css');
   }
 }
 
@@ -181,6 +139,13 @@ function tripal_feature_jbrowse_render_template($record) {
   ];
 }
 
+/**
+ * Get the record from the db.
+ *
+ * @param $organism_id
+ *
+ * @return mixed
+ */
 function tripal_feature_jbrowse_get_jbrowse_record($organism_id) {
   return db_query('SELECT * FROM {tripal_feature_jbrowse} WHERE organism_id=:id', [
     ':id' => $organism_id,
@@ -200,6 +165,10 @@ function tripal_feature_jbrowse_theme($existing, $type, $theme, $path) {
     'tripal_feature_jbrowse_pane' => [
       'variables' => ['record' => ''],
       'template' => 'tripal_feature_jbrowse_pane',
+      'path' => "{$path}/theme/templates",
+    ],
+    'tripal_feature_jbrowse_admin' => [
+      'template' => 'tripal_feature_jbrowse_admin',
       'path' => "{$path}/theme/templates",
     ],
   ];
