@@ -182,7 +182,7 @@ function tripal_feature_jbrowse_theme($existing, $type, $theme, $path) {
  * @param object $record tripal_feature_jbrowse DB record
  */
 function tripal_feature_jbrowse_parse_link(&$record) {
-  if (!empty($record->tracks)) {
+  if ($record->tracks) {
     $tracks = json_decode($record->tracks);
     foreach ($tracks as $key => $track) {
       $tracks[$key] = trim($track);

@@ -16,7 +16,7 @@ function tripal_feature_jbrowse_form($form, &$form_state, $id = NULL) {
       $title = $record->title;
       $link = $record->link;
       $tracks = implode(',', json_decode($record->tracks));
-      $description = $record->description;
+      $description = json_decode($record->description);
       $show = $record->show_in_organism_page;
     }
     else {
@@ -71,7 +71,8 @@ function tripal_feature_jbrowse_form($form, &$form_state, $id = NULL) {
     '#type' => 'text_format',
     '#title' => t('Pane Page Content'),
     '#description' => t('Optional description for the pane. If left empty, clicking on the pane\'s link will redirect the user to JBrowse.'),
-    '#default_value' => isset($description) ? $description : '',
+    '#default_value' => isset($description) ? $description->value : '',
+    '#format' => isset($description) ? $description->format : '',
   ];
 
   $form['show_in_organism'] = [
@@ -112,7 +113,7 @@ function tripal_feature_jbrowse_form_submit($form, &$form_sate) {
     'title' => $values['title'],
     'link' => $values['link'],
     'tracks' => json_encode($tracks),
-    'description' => $values['description'],
+    'description' => json_encode($values['description']),
     'show_in_organism_page' => $values['show_in_organism'] ? 1 : 0,
   ];
 
