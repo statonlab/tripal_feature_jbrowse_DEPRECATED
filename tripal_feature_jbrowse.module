@@ -97,6 +97,8 @@ function tripal_feature_jbrowse_node_view($node, $view_mode, $langcode) {
     return;
   }
 
+  $node->content['#tripal_generic_node_template'] = TRUE;
+
   $organism_id = $type === 'chado_feature' ? $node->feature->organism_id->organism_id : $node->organism->organism_id;
 
   $record = tripal_feature_jbrowse_get_jbrowse_record($organism_id);
@@ -106,8 +108,8 @@ function tripal_feature_jbrowse_node_view($node, $view_mode, $langcode) {
   }
 
   if ($record) {
-    tripal_feature_jbrowse_parse_link($record);
-    $node->content['tripal_feature_jbrowse'] = tripal_feature_jbrowse_render_template($record);
+    tripal_feature_jbrowse_parse_link($record, $node);
+    $node->content['tripal_feature_jbrowse'] = tripal_feature_jbrowse_render_template($record, $node);
   }
 }
 
@@ -119,15 +121,16 @@ function tripal_feature_jbrowse_node_view($node, $view_mode, $langcode) {
  *
  * @return array
  */
-function tripal_feature_jbrowse_render_template($record) {
+function tripal_feature_jbrowse_render_template($record, &$node) {
 
   if (!empty($record->description)) {
     return [
-      '#title' => $record->title,
+      //'#title' => $record->title,
       '#tripal_toc_id' => 'tripal_feature_jbrowse',
       '#tripal_toc_title' => $record->title,
       '#markup' => theme('tripal_feature_jbrowse_pane', ['record' => $record]),
       '#weight' => 15,
+      '#node' => $node
     ];
   }
 
@@ -180,8 +183,9 @@ function tripal_feature_jbrowse_theme($existing, $type, $theme, $path) {
  * Parse jbrowse links to include tracks.
  *
  * @param object $record tripal_feature_jbrowse DB record
+ * @param object $node drupal node
  */
-function tripal_feature_jbrowse_parse_link(&$record) {
+function tripal_feature_jbrowse_parse_link(&$record, $node) {
   if ($record->tracks) {
     $tracks = json_decode($record->tracks);
     foreach ($tracks as $key => $track) {
@@ -196,5 +200,10 @@ function tripal_feature_jbrowse_parse_link(&$record) {
     else {
       $record->link .= "?tracks={$tracks}";
     }
+  }
+
+  // Add loc parameters
+  if($node->type === 'chado_feature') {
+    $record->link .= "&loc={$node->feature->uniquename}";
   }
 }
