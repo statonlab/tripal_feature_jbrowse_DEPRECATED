@@ -72,7 +72,7 @@ function tripal_feature_jbrowse_form($form, &$form_state, $id = NULL) {
     '#title' => t('Pane Page Content'),
     '#description' => t('Optional description for the pane. If left empty, clicking on the pane\'s link will redirect the user to JBrowse.'),
     '#default_value' => isset($description) ? $description->value : '',
-    '#format' => isset($description) ? $description->format : '',
+    '#format' => isset($description) ? $description->format : 'markdown',
   ];
 
   $form['show_in_organism'] = [
