@@ -187,7 +187,7 @@ function tripal_feature_jbrowse_theme($existing, $type, $theme, $path) {
  * @param object $node drupal node
  */
 function tripal_feature_jbrowse_parse_link(&$record, $node) {
-  if ($record->tracks) {
+  if (!empty($record->tracks)) {
     $tracks = json_decode($record->tracks);
     foreach ($tracks as $key => $track) {
       $tracks[$key] = trim($track);
