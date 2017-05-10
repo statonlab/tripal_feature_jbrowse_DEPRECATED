@@ -25,7 +25,7 @@ function tripal_feature_jbrowse_form($form, &$form_state, $id = NULL) {
   }
 
   // Get the list of organisms
-  $organisms = chado_query('select organism_id, common_name, genus, species from {organism}');
+  $organisms = chado_query('select organism_id, common_name, genus, species from {organism} ORDER BY common_name');
 
   $organisms_list = ['' => '-- Choose Organism --'];
 
