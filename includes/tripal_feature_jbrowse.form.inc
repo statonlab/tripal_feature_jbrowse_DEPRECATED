@@ -34,7 +34,7 @@ function tripal_feature_jbrowse_form($form, &$form_state, $id = NULL) {
   }
 
   $form['organism'] = [
-    '#prefix' => '<p><b>Add a pane to the organism page that links to a JBrowse instance.</b></p>',
+    '#prefix' => '<p><b>Add a pane to organism and feature pages that links to a JBrowse instance.</b></p>',
     '#title' => t('Organism'),
     '#type' => 'select',
     '#description' => t('Organism to associate a JBrowse instance to its features.'),
