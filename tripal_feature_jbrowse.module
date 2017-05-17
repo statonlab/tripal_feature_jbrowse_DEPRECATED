@@ -189,9 +189,9 @@ function tripal_feature_jbrowse_theme($existing, $type, $theme, $path) {
 function tripal_feature_jbrowse_parse_link(&$record, $node) {
   // Add loc parameters
   if($node->type === 'chado_feature') {
-    $record->link .= "?loc={$node->feature->uniquename}";
+    $record->link .= "&?loc={$node->feature->uniquename}";
   }
-  
+
   if (!empty($record->tracks)) {
     $tracks = json_decode($record->tracks);
     foreach ($tracks as $key => $track) {
