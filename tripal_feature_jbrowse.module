@@ -190,6 +190,7 @@ function tripal_feature_jbrowse_parse_link(&$record, $node) {
   // Add loc parameters
   if($node->type === 'chado_feature') {
     $record->link .= "&?loc={$node->feature->uniquename}";
+    $record->link .= "&highlight={$node->feature->uniquename}";
   }
 
   if (!empty($record->tracks)) {
